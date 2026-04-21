@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Play, Settings, Loader2, Terminal, X } from 'lucide-react';
+import Button from '../components/ui/Button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import { Avatar, AvatarFallback } from '../components/ui/Avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/Dialog';
 
 const fetchAgents = async () => {
   const res = await fetch('/api/agents');
@@ -17,7 +22,6 @@ const runAgent = async (agentId) => {
 };
 
 function Agents() {
-  const queryClient = useQueryClient();
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [runOutput, setRunOutput] = useState(null);
 
@@ -29,9 +33,7 @@ function Agents() {
 
   const runMutation = useMutation({
     mutationFn: runAgent,
-    onSuccess: (data) => {
-      setRunOutput(data);
-    }
+    onSuccess: (data) => setRunOutput(data)
   });
 
   if (isLoading) {
@@ -42,155 +44,124 @@ function Agents() {
     );
   }
 
-  const handleRun = (agentId) => {
-    setRunOutput(null);
-    runMutation.mutate(agentId);
-  };
-
   return (
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold">Agents</h1>
-        <p className="text-neutral-500 text-sm mt-1">
-          {agents?.length || 0} agents installed
+        <h1 className="text-3xl font-bold tracking-tight">Agents</h1>
+        <p className="text-neutral-500 mt-2">
+          {agents?.length || 0} agents installed and ready
         </p>
       </div>
 
       {/* Agent Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {(agents || []).map(agent => (
-          <div 
-            key={agent.id} 
-            className="bg-neutral-950 border border-neutral-900 rounded-xl p-6 hover:border-neutral-800 transition-all group"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-neutral-900 flex items-center justify-center text-[#ffbe00] font-semibold">
-                  {agent.name.charAt(0).toUpperCase()}
+          <Card key={agent.id} className="group hover:border-neutral-700 transition-all">
+            <CardHeader className="pb-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarFallback className="text-lg">
+                      {agent.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle className="text-base">{agent.name}</CardTitle>
+                    <CardDescription>{agent.id}</CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium">{agent.name}</h3>
-                  <p className="text-xs text-neutral-500">{agent.id}</p>
-                </div>
+                <Badge variant={agent.status === 'active' ? 'default' : 'secondary'}>
+                  {agent.status}
+                </Badge>
               </div>
-              <div className={`w-2 h-2 rounded-full ${
-                agent.status === 'active' ? 'bg-[#ffbe00]' :
-                agent.status === 'running' ? 'bg-blue-500 animate-pulse' :
-                'bg-neutral-600'
-              }`} />
-            </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-neutral-400 mb-4 line-clamp-2">
+                {agent.description || 'No description available'}
+              </p>
 
-            <p className="text-sm text-neutral-400 mb-4 line-clamp-2">
-              {agent.description || 'No description available'}
-            </p>
-
-            <div className="flex items-center gap-2 text-xs text-neutral-600 mb-4">
-              {agent.has_config && (
-                <span className="px-2 py-1 bg-neutral-900 rounded">config</span>
-              )}
-              {agent.requires?.bins && (
-                <span className="px-2 py-1 bg-neutral-900 rounded">
-                  {agent.requires.bins.length} deps
-                </span>
-              )}
-            </div>
-
-            <div className="flex gap-2">
-              <button 
-                onClick={() => handleRun(agent.id)}
-                disabled={runMutation.isPending}
-                className="flex-1 px-4 py-2 bg-[#ffbe00] hover:bg-[#e6ac00] disabled:bg-neutral-800 disabled:text-neutral-500 text-black rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-              >
-                {runMutation.isPending && runMutation.variables === agent.id ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Play className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-xs text-neutral-600 mb-4">
+                {agent.has_config && (
+                  <Badge variant="outline">config</Badge>
                 )}
-                Run
-              </button>
-              <button 
-                onClick={() => setSelectedAgent(agent)}
-                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 rounded-lg transition-colors"
-              >
-                <Settings className="w-4 h-4 text-neutral-400" />
-              </button>
-            </div>
-          </div>
+                {agent.requires?.bins && (
+                  <Badge variant="outline">{agent.requires.bins.length} deps</Badge>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => runMutation.mutate(agent.id)}
+                  isLoading={runMutation.isPending && runMutation.variables === agent.id}
+                  className="flex-1"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Run
+                </Button>
+                <Button 
+                  variant="secondary"
+                  onClick={() => setSelectedAgent(agent)}
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      {/* Run Output Modal */}
-      {runOutput && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="bg-neutral-950 border border-neutral-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-auto">
-            <div className="flex items-center justify-between p-4 border-b border-neutral-900">
-              <div className="flex items-center gap-2">
-                <Terminal className="w-5 h-5 text-[#ffbe00]" />
-                <h3 className="font-semibold">Execution Output</h3>
-              </div>
-              <button 
-                onClick={() => setRunOutput(null)}
-                className="p-2 hover:bg-neutral-900 rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      {/* Run Output Dialog */}
+      <Dialog open={!!runOutput} onOpenChange={() => setRunOutput(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <Terminal className="w-5 h-5 text-[#ffbe00]" />
+              <DialogTitle>Execution Output</DialogTitle>
             </div>
-            
-            <div className="p-4">
-              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs mb-4 ${
-                runOutput.success 
-                  ? 'bg-[#ffbe00]/10 text-[#ffbe00]' 
-                  : 'bg-red-500/10 text-red-500'
-              }`}>
-                {runOutput.success ? 'Success' : 'Failed'}
-              </div>
-
-              {runOutput.stdout && (
-                <div className="mb-4">
-                  <p className="text-xs text-neutral-500 mb-2">Output:</p>
-                  <pre className="bg-black p-4 rounded-lg text-sm overflow-x-auto text-neutral-300 font-mono">
-                    {runOutput.stdout}
-                  </pre>
-                </div>
-              )}
-
-              {runOutput.stderr && (
-                <div>
-                  <p className="text-xs text-neutral-500 mb-2">Errors:</p>
-                  <pre className="bg-black p-4 rounded-lg text-sm overflow-x-auto text-red-400 font-mono">
-                    {runOutput.stderr}
-                  </pre>
-                </div>
-              )}
-            </div>
+          </DialogHeader>
+          
+          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm mb-4 ${
+            runOutput?.success 
+              ? 'bg-[#ffbe00]/10 text-[#ffbe00] border border-[#ffbe00]/20' 
+              : 'bg-red-500/10 text-red-500 border border-red-500/20'
+          }`}>
+            {runOutput?.success ? 'Success' : 'Failed'}
           </div>
-        </div>
-      )}
 
-      {/* Agent Config Modal */}
-      {selectedAgent && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="bg-neutral-950 border border-neutral-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-auto">
-            <div className="flex items-center justify-between p-4 border-b border-neutral-900">
-              <h3 className="font-semibold">{selectedAgent.name}</h3>
-              <button 
-                onClick={() => setSelectedAgent(null)}
-                className="p-2 hover:bg-neutral-900 rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+          {runOutput?.stdout && (
+            <div className="mb-4">
+              <p className="text-xs text-neutral-500 mb-2 font-medium">Output</p>
+              <pre className="bg-black border border-neutral-800 p-4 rounded-lg text-sm overflow-x-auto text-neutral-300 font-mono">
+                {runOutput.stdout}
+              </pre>
             </div>
-            <div className="p-4">
-              <p className="text-sm text-neutral-400 mb-4">{selectedAgent.description}</p>
-              <div className="bg-black p-4 rounded-lg">
-                <p className="text-xs text-neutral-500 mb-2">Directory:</p>
-                <code className="text-xs text-neutral-300">{selectedAgent.directory}</code>
-              </div>
+          )}
+
+          {runOutput?.stderr && (
+            <div>
+              <p className="text-xs text-neutral-500 mb-2 font-medium">Errors</p>
+              <pre className="bg-black border border-neutral-800 p-4 rounded-lg text-sm overflow-x-auto text-red-400 font-mono">
+                {runOutput.stderr}
+              </pre>
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Agent Config Dialog */}
+      <Dialog open={!!selectedAgent} onOpenChange={() => setSelectedAgent(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedAgent?.name}</DialogTitle>
+            <DialogDescription>{selectedAgent?.description}</DialogDescription>
+          </DialogHeader>
+          <div className="bg-black border border-neutral-800 p-4 rounded-lg">
+            <p className="text-xs text-neutral-500 mb-2 font-medium">Directory</p>
+            <code className="text-xs text-neutral-300">{selectedAgent?.directory}</code>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

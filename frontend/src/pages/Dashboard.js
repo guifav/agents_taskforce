@@ -1,18 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { 
-  Activity, 
-  Users, 
-  GitPullRequest, 
-  DollarSign,
-  ArrowUpRight,
-  Loader2
-} from 'lucide-react';
-
-const fetchDashboard = async () => {
-  const res = await fetch('/api/dashboard');
-  return res.json();
-};
+import { Activity, Users, GitPullRequest, DollarSign, ArrowUpRight } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
 
 const fetchMetrics = async () => {
   const res = await fetch('/api/metrics/dashboard');
@@ -26,22 +16,28 @@ const fetchAgents = async () => {
 
 function StatCard({ title, value, subtitle, icon: Icon, trend }) {
   return (
-    <div className="bg-neutral-950 border border-neutral-900 rounded-xl p-6 hover:border-neutral-800 transition-colors">
-      <div className="flex items-start justify-between mb-4">
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-neutral-500">{title}</CardTitle>
         <div className="p-2 bg-neutral-900 rounded-lg">
-          <Icon className="w-5 h-5 text-[#ffbe00]" />
+          <Icon className="w-4 h-4 text-[#ffbe00]" />
         </div>
-        {trend && (
-          <span className="text-xs text-neutral-500 flex items-center gap-1">
-            {trend}
-            <ArrowUpRight className="w-3 h-3" />
-          </span>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        {subtitle && (
+          <p className="text-xs text-neutral-500 mt-1">{subtitle}</p>
         )}
-      </div>
-      <p className="text-neutral-500 text-sm mb-1">{title}</p>
-      <p className="text-2xl font-semibold">{value}</p>
-      {subtitle && <p className="text-xs text-neutral-600 mt-1">{subtitle}</p>}
-    </div>
+        {trend && (
+          <div className="flex items-center gap-1 mt-2">
+            <Badge variant="default" className="text-xs">
+              <ArrowUpRight className="w-3 h-3 mr-1" />
+              {trend}
+            </Badge>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -71,7 +67,7 @@ function Dashboard() {
   if (metricsLoading || agentsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-[#ffbe00]" />
+        <div className="w-8 h-8 border-2 border-[#ffbe00] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -79,21 +75,24 @@ function Dashboard() {
   const activeAgents = agents?.filter(a => a.status === 'active').length || 0;
   const idleAgents = agents?.filter(a => a.status === 'idle').length || 0;
 
+  const activities = [
+    { message: 'github-guardian scanned 3 repositories', time: '2 min ago' },
+    { message: 'cost-watcher reported daily usage', time: '15 min ago' },
+    { message: 'security-scout found 1 medium alert', time: '1 hour ago' },
+  ];
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
-          <p className="text-neutral-500 text-sm mt-1">Overview of your agent team</p>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-neutral-500 mt-2">Overview of your agent team</p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-950 border border-neutral-900 rounded-lg">
-            <div className={`w-2 h-2 rounded-full ${
-              wsStatus === 'connected' ? 'bg-[#ffbe00]' : 'bg-red-500'
-            }`} />
-            <span className="text-xs text-neutral-500 capitalize">{wsStatus}</span>
-          </div>
+        <div className="flex items-center gap-3">
+          <Badge variant={wsStatus === 'connected' ? 'default' : 'destructive'}>
+            {wsStatus === 'connected' ? 'Connected' : wsStatus}
+          </Badge>
         </div>
       </div>
 
@@ -127,24 +126,28 @@ function Dashboard() {
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-neutral-950 border border-neutral-900 rounded-xl p-6">
-        <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-        <div className="space-y-3">
-          {[
-            { message: 'github-guardian scanned 3 repositories', time: '2 min ago' },
-            { message: 'cost-watcher reported daily usage', time: '15 min ago' },
-            { message: 'security-scout found 1 medium alert', time: '1 hour ago' },
-          ].map((activity, i) => (
-            <div key={i} className="flex items-center justify-between py-3 border-b border-neutral-900 last:border-0">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-[#ffbe00]" />
-                <span className="text-sm">{activity.message}</span>
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>Latest actions from your agents</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {activities.map((activity, i) => (
+              <div 
+                key={i} 
+                className="flex items-center justify-between py-3 border-b border-neutral-800 last:border-0 last:pb-0"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[#ffbe00]" />
+                  <span className="text-sm">{activity.message}</span>
+                </div>
+                <Badge variant="outline">{activity.time}</Badge>
               </div>
-              <span className="text-xs text-neutral-500">{activity.time}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
