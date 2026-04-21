@@ -112,19 +112,21 @@ If changes are needed, start with "CHANGES_NEEDED" and list the issues found."""
     
     cmd = [
         claude_path,
-        "--permission-mode", "bypassPermissions",
-        "--print",
-        review_prompt
+        "--dangerously-skip-permissions"
     ]
     
     workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Claude: Executing review...")
-    workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Claude: Using permission-mode bypassPermissions")
+    workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Claude: Using dangerously-skip-permissions mode")
     
     env = os.environ.copy()
     env['HOME'] = os.path.expanduser('~')
     
+    # Send "1" to accept trust prompt, then the review prompt
+    input_text = f"1\n{review_prompt}\n"
+    
     result = subprocess.run(
         cmd,
+        input=input_text,
         capture_output=True,
         text=True,
         timeout=300,
