@@ -1,0 +1,132 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: agent-dashboard-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-agentadmin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${DB_NAME:-agentdashboard}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - agent-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-agentadmin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: agent-dashboard-redis
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - agent-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: agent-dashboard-api
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-agentadmin}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-agentdashboard}
+      - REDIS_URL=redis://redis:6379/0
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - OPENCLAW_PATH=${OPENCLAW_PATH:-/usr/local/bin/openclaw}
+      - OPENCLAW_WORKSPACE=${OPENCLAW_WORKSPACE:-/Users/gui/.openclaw/workspace}
+      - DEBUG=${DEBUG:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ${OPENCLAW_WORKSPACE:-/Users/gui/.openclaw/workspace}:/workspace:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - agent-network
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: agent-dashboard-ui
+    environment:
+      - REACT_APP_API_URL=http://localhost:${API_PORT:-8000}
+      - REACT_APP_WS_URL=ws://localhost:${API_PORT:-8000}
+    ports:
+      - "${DASHBOARD_PORT:-8080}:80"
+    depends_on:
+      - backend
+    networks:
+      - agent-network
+
+  # Agent Worker
+  agent-worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: agent-dashboard-worker
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-agentadmin}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-agentdashboard}
+      - REDIS_URL=redis://redis:6379/0
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - OPENCLAW_PATH=${OPENCLAW_PATH:-/usr/local/bin/openclaw}
+      - OPENCLAW_WORKSPACE=${OPENCLAW_WORKSPACE:-/Users/gui/.openclaw/workspace}
+    volumes:
+      - ${OPENCLAW_WORKSPACE:-/Users/gui/.openclaw/workspace}:/workspace:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - agent-network
+    command: celery -A workers.celery_app worker --loglevel=info
+
+  # Scheduler
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: agent-dashboard-scheduler
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-agentadmin}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-agentdashboard}
+      - REDIS_URL=redis://redis:6379/0
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    volumes:
+      - ${OPENCLAW_WORKSPACE:-/Users/gui/.openclaw/workspace}:/workspace:ro
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - agent-network
+    command: celery -A workers.celery_app beat --loglevel=info
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  agent-network:
+    driver: bridge
