@@ -1,6 +1,8 @@
 """
 Orchestrator API - Workflow management for agent-driven development
 """
+import json
+import os
 import uuid
 import subprocess
 from datetime import datetime
@@ -10,6 +12,17 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 
 router = APIRouter()
+
+
+def get_openai_api_key() -> Optional[str]:
+    """Load OpenAI API key from Codex auth.json"""
+    auth_path = os.path.expanduser("~/.codex/auth.json")
+    try:
+        with open(auth_path, 'r') as f:
+            auth_data = json.load(f)
+            return auth_data.get("OPENAI_API_KEY")
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
 
 # In-memory workflow storage (use database in production)
 workflows = {}
@@ -131,12 +144,20 @@ def run_agent_task(workflow_id: str, task_type: str, params: dict):
             workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Executing codex review...")
             
             # Run Codex (with timeout) - cwd defines what to review
+            # Set OPENAI_API_KEY explicitly from Codex auth.json
+            env = os.environ.copy()
+            api_key = get_openai_api_key()
+            if api_key:
+                env['OPENAI_API_KEY'] = api_key
+                workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Using API key from ~/.codex/auth.json")
+            
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minute timeout
-                cwd=review_path
+                cwd=review_path,
+                env=env
             )
             
             workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Exit code: {result.returncode}")
