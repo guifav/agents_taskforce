@@ -9,7 +9,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from api.routes import agents, github, metrics, workflows
+from api.routes import agents, github, metrics, workflows, orchestrator
 from api.websocket.manager import ConnectionManager
 from models.database import init_db
 from workers.celery_app import celery_app
@@ -48,6 +48,7 @@ app.include_router(agents.router, prefix="/api/agents", tags=["agents"])
 app.include_router(github.router, prefix="/api/github", tags=["github"])
 app.include_router(metrics.router, prefix="/api/metrics", tags=["metrics"])
 app.include_router(workflows.router, prefix="/api/workflows", tags=["workflows"])
+app.include_router(orchestrator.router, prefix="/api/orchestrator", tags=["orchestrator"])
 
 # WebSocket manager
 manager = ConnectionManager()

@@ -6,7 +6,8 @@ import {
   GitPullRequest, 
   Users,
   Workflow,
-  BarChart3
+  BarChart3,
+  Rocket
 } from 'lucide-react';
 
 import Dashboard from './pages/Dashboard';
@@ -14,6 +15,7 @@ import Agents from './pages/Agents';
 import GitHub from './pages/GitHub';
 import Workflows from './pages/Workflows';
 import Metrics from './pages/Metrics';
+import Orchestrator from './pages/Orchestrator';
 import { Separator } from './components/ui/Separator';
 
 const queryClient = new QueryClient();
@@ -23,6 +25,7 @@ function App() {
     { to: '/', icon: Activity, label: 'Dashboard' },
     { to: '/agents', icon: Users, label: 'Agents' },
     { to: '/github', icon: GitPullRequest, label: 'GitHub' },
+    { to: '/orchestrator', icon: Rocket, label: 'Orchestrator' },
     { to: '/workflows', icon: Workflow, label: 'Workflows' },
     { to: '/metrics', icon: BarChart3, label: 'Metrics' },
   ];
@@ -81,6 +84,7 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/agents" element={<Agents />} />
               <Route path="/github" element={<GitHub />} />
+              <Route path="/orchestrator" element={<Orchestrator />} />
               <Route path="/workflows" element={<Workflows />} />
               <Route path="/metrics" element={<Metrics />} />
             </Routes>
