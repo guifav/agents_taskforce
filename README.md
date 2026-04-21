@@ -50,8 +50,12 @@ Automatically discovers and controls your installed OpenClaw skills from `~/.ope
 - Docker 24.0+
 - Docker Compose 2.20+
 - OpenClaw CLI installed
+- Python 3.11+ (for local mode)
+- Node.js 20+ (for local frontend)
 
-### Installation
+### Option 1: Local Mode (Recommended for Real Agent Execution)
+
+Run the backend directly on your Mac to execute agents:
 
 ```bash
 # Clone the repository
@@ -59,9 +63,27 @@ git clone https://github.com/guifav/agent-orchestrator-dashboard.git
 cd agent-orchestrator-dashboard
 
 # Configure environment
-cp .env.example .env
-# Edit .env with your GitHub token and OpenClaw config
+cp backend/.env.local backend/.env
+# Edit backend/.env with your GITHUB_TOKEN
 
+# Start database services
+docker-compose up -d postgres redis
+
+# Start backend locally (has access to OpenClaw CLI)
+./start-local.sh
+
+# In another terminal, start frontend
+cd frontend && npm install && npm start
+
+# Access dashboard
+open http://localhost:3000
+```
+
+### Option 2: Docker Mode (Demo Only)
+
+Agents cannot be executed in Docker mode (OpenClaw not available in container):
+
+```bash
 # Start all services
 docker-compose up -d
 
