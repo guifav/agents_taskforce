@@ -92,8 +92,15 @@ def run_agent_task(workflow_id: str, task_type: str, params: dict):
         
         try:
             # Execute real Codex CLI with model 5.4 and xhigh reasoning
+            # Use full path or ensure PATH includes nvm
+            import os
+            env = os.environ.copy()
+            env['PATH'] = '/Users/gui/.nvm/versions/node/v22.17.0/bin:' + env.get('PATH', '')
+            
+            # Use full path to codex
+            codex_path = "/Users/gui/.nvm/versions/node/v22.17.0/bin/codex"
             cmd = [
-                "codex",
+                codex_path,
                 "review",
                 f"/tmp/pr-{pr_number}",  # Path to PR checkout
                 "--model", "5.4",
@@ -110,7 +117,8 @@ def run_agent_task(workflow_id: str, task_type: str, params: dict):
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minute timeout
-                cwd=f"/tmp/{repo_name}" if repo_name else "/tmp"
+                cwd=f"/tmp/{repo_name}" if repo_name else "/tmp",
+                env=env
             )
             
             workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Exit code: {result.returncode}")
