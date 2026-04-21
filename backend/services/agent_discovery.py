@@ -130,7 +130,44 @@ class AgentDiscovery:
                 'demo_mode': True
             }
         
-        cmd = ["openclaw", "skill", "run", skill_id]
+        # Skills in OpenClaw are not directly executable via CLI
+        # They are typically run via:
+        # 1. Cron jobs: openclaw cron add --skill <name>
+        # 2. Agent messages: openclaw agent --message "..."
+        # 3. Or directly via their scripts if they have entry points
+        
+        # Try to find if skill has a direct executable
+        skill_dir = self.skills_dir / skill_id
+        entry_points = [
+            skill_dir / "index.js",
+            skill_dir / "main.py",
+            skill_dir / "run.sh",
+        ]
+        
+        for entry_point in entry_points:
+            if entry_point.exists():
+                if entry_point.suffix == '.js':
+                    cmd = ["node", str(entry_point)]
+                elif entry_point.suffix == '.py':
+                    cmd = ["python3", str(entry_point)]
+                elif entry_point.suffix == '.sh':
+                    cmd = ["bash", str(entry_point)]
+                else:
+                    continue
+                break
+        else:
+            # No direct entry point found
+            return {
+                'success': False,
+                'stdout': '',
+                'stderr': '',
+                'error': f'Agent "{skill_id}" does not have a direct executable entry point. '
+                        f'Skills in OpenClaw are typically run via cron jobs or the agent system. '
+                        f'To run this skill, use: openclaw cron run {skill_id} (if scheduled) '
+                        f'or check the skill documentation at {skill_dir}/SKILL.md',
+                'timestamp': datetime.utcnow().isoformat(),
+                'skill_dir': str(skill_dir)
+            }
         if args:
             cmd.extend(args)
             
