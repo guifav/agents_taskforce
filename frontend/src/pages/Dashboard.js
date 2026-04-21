@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Activity, Users, GitPullRequest, DollarSign, ArrowUpRight } from 'lucide-react';
+import { Activity, Users, GitPullRequest, DollarSign, ArrowUpRight, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 
@@ -11,6 +11,11 @@ const fetchMetrics = async () => {
 
 const fetchAgents = async () => {
   const res = await fetch('/api/agents');
+  return res.json();
+};
+
+const fetchSystemStatus = async () => {
+  const res = await fetch('/api/system/status');
   return res.json();
 };
 
@@ -54,6 +59,11 @@ function Dashboard() {
     refetchInterval: 30000
   });
 
+  const { data: systemStatus } = useQuery({
+    queryKey: ['system-status'],
+    queryFn: fetchSystemStatus
+  });
+
   const [wsStatus, setWsStatus] = useState('connecting');
 
   useEffect(() => {
@@ -74,6 +84,7 @@ function Dashboard() {
 
   const activeAgents = agents?.filter(a => a.status === 'active').length || 0;
   const idleAgents = agents?.filter(a => a.status === 'idle').length || 0;
+  const isDemoMode = systemStatus && !systemStatus.openclaw_available;
 
   const activities = [
     { message: 'github-guardian scanned 3 repositories', time: '2 min ago' },
@@ -90,11 +101,27 @@ function Dashboard() {
           <p className="text-neutral-500 mt-2">Overview of your agent team</p>
         </div>
         <div className="flex items-center gap-3">
+          {isDemoMode && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <AlertCircle className="w-4 h-4 text-yellow-500" />
+              <span className="text-xs text-yellow-500">Demo Mode</span>
+            </div>
+          )}
           <Badge variant={wsStatus === 'connected' ? 'default' : 'destructive'}>
             {wsStatus === 'connected' ? 'Connected' : wsStatus}
           </Badge>
         </div>
       </div>
+
+      {/* Demo Mode Alert */}
+      {isDemoMode && (
+        <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+          <p className="text-sm text-yellow-500">
+            <strong>Demo Mode:</strong> The dashboard is running in Docker. Agents are detected but cannot be executed directly. 
+            Use <code className="bg-black/50 px-2 py-1 rounded">openclaw skill run &lt;agent&gt;</code> on your host machine.
+          </p>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

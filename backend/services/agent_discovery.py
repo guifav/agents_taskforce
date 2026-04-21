@@ -13,23 +13,35 @@ OPENCLAW_SKILLS_DIR = Path(os.getenv("OPENCLAW_WORKSPACE", "/Users/gui/.openclaw
 if not OPENCLAW_SKILLS_DIR.exists():
     OPENCLAW_SKILLS_DIR = Path("/openclaw/.openclaw/skills")
 
+# Check if openclaw is available
+OPENCLAW_PATH = os.getenv("OPENCLAW_PATH", "/usr/local/bin/openclaw")
+
+def is_openclaw_available() -> bool:
+    """Check if openclaw CLI is available"""
+    try:
+        result = subprocess.run(
+            ["which", "openclaw"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        return result.returncode == 0
+    except:
+        return False
+
 
 class AgentDiscovery:
     """Discovers and manages OpenClaw skills/agents"""
     
     def __init__(self):
         self.skills_dir = OPENCLAW_SKILLS_DIR
-        self._cache = {}
+        self._openclaw_available = is_openclaw_available()
         
     def list_skills(self) -> List[Dict]:
         """List all available skills"""
         skills = []
         
-        print(f"[DEBUG] Looking for skills in: {self.skills_dir}")
-        print(f"[DEBUG] Directory exists: {self.skills_dir.exists()}")
-        
         if not self.skills_dir.exists():
-            print(f"[DEBUG] Skills directory not found: {self.skills_dir}")
             return skills
             
         for skill_dir in self.skills_dir.iterdir():
@@ -99,6 +111,25 @@ class AgentDiscovery:
     
     def run_skill(self, skill_id: str, args: List[str] = None) -> Dict:
         """Execute a skill via OpenClaw CLI"""
+        skill = self.get_skill(skill_id)
+        if not skill:
+            return {
+                'success': False,
+                'error': f'Agent "{skill_id}" not found',
+                'timestamp': datetime.utcnow().isoformat()
+            }
+        
+        # Check if openclaw is available
+        if not self._openclaw_available:
+            return {
+                'success': False,
+                'error': 'OpenClaw CLI not available in this environment. The dashboard is running in demo mode. To execute agents, please run the dashboard directly on your host machine instead of Docker.',
+                'stdout': '',
+                'stderr': '',
+                'timestamp': datetime.utcnow().isoformat(),
+                'demo_mode': True
+            }
+        
         cmd = ["openclaw", "skill", "run", skill_id]
         if args:
             cmd.extend(args)
@@ -108,8 +139,8 @@ class AgentDiscovery:
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=300,  # 5 minute timeout
-                cwd=str(self.skills_dir.parent.parent)  # Run from home directory
+                timeout=300,
+                cwd=str(self.skills_dir.parent.parent)
             )
             
             return {
@@ -123,7 +154,7 @@ class AgentDiscovery:
         except subprocess.TimeoutExpired:
             return {
                 'success': False,
-                'error': 'Skill execution timed out after 5 minutes',
+                'error': 'Agent execution timed out after 5 minutes',
                 'timestamp': datetime.utcnow().isoformat()
             }
         except Exception as e:
@@ -153,6 +184,15 @@ class AgentDiscovery:
             return True
         except:
             return False
+    
+    def get_system_status(self) -> Dict:
+        """Get overall system status"""
+        return {
+            'openclaw_available': self._openclaw_available,
+            'skills_dir': str(self.skills_dir),
+            'skills_dir_exists': self.skills_dir.exists(),
+            'agent_count': len(self.list_skills())
+        }
 
 
 # Singleton instance

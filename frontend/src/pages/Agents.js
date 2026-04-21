@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Play, Settings, Loader2, Terminal, X } from 'lucide-react';
+import { Play, Settings, Loader2, Terminal, X, AlertCircle } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -9,6 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 const fetchAgents = async () => {
   const res = await fetch('/api/agents');
+  return res.json();
+};
+
+const fetchSystemStatus = async () => {
+  const res = await fetch('/api/system/status');
   return res.json();
 };
 
@@ -31,10 +36,17 @@ function Agents() {
     refetchInterval: 30000
   });
 
+  const { data: systemStatus } = useQuery({
+    queryKey: ['system-status'],
+    queryFn: fetchSystemStatus
+  });
+
   const runMutation = useMutation({
     mutationFn: runAgent,
     onSuccess: (data) => setRunOutput(data)
   });
+
+  const isDemoMode = systemStatus && !systemStatus.openclaw_available;
 
   if (isLoading) {
     return (
@@ -48,11 +60,31 @@ function Agents() {
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Agents</h1>
-        <p className="text-neutral-500 mt-2">
-          {agents?.length || 0} agents installed and ready
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Agents</h1>
+            <p className="text-neutral-500 mt-2">
+              {agents?.length || 0} agents installed
+            </p>
+          </div>
+          {isDemoMode && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <AlertCircle className="w-4 h-4 text-yellow-500" />
+              <span className="text-sm text-yellow-500">Demo Mode - OpenClaw not available</span>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Demo Mode Alert */}
+      {isDemoMode && (
+        <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+          <p className="text-sm text-yellow-500">
+            <strong>Demo Mode:</strong> The dashboard is running in Docker, so agents cannot be executed directly. 
+            To run agents, use the OpenClaw CLI on your host machine: <code className="bg-black/50 px-2 py-1 rounded">openclaw skill run &lt;agent-name&gt;</code>
+          </p>
+        </div>
+      )}
 
       {/* Agent Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -94,10 +126,11 @@ function Agents() {
                 <Button 
                   onClick={() => runMutation.mutate(agent.id)}
                   isLoading={runMutation.isPending && runMutation.variables === agent.id}
+                  disabled={isDemoMode}
                   className="flex-1"
                 >
                   <Play className="w-4 h-4 mr-2" />
-                  Run
+                  {isDemoMode ? 'Not Available' : 'Run'}
                 </Button>
                 <Button 
                   variant="secondary"
@@ -120,6 +153,18 @@ function Agents() {
               <DialogTitle>Execution Output</DialogTitle>
             </div>
           </DialogHeader>
+          
+          {runOutput?.demo_mode && (
+            <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <p className="text-sm text-yellow-500">
+                <strong>Demo Mode:</strong> Agents cannot be executed from within Docker. 
+                Please run directly on your host machine:
+              </p>
+              <code className="block mt-2 p-2 bg-black rounded text-sm">
+                openclaw skill run {runMutation.variables}
+              </code>
+            </div>
+          )}
           
           <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm mb-4 ${
             runOutput?.success 
@@ -146,6 +191,12 @@ function Agents() {
               </pre>
             </div>
           )}
+
+          {runOutput?.error && !runOutput?.demo_mode && (
+            <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg">
+              <p className="text-sm text-red-500">{runOutput.error}</p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -156,9 +207,22 @@ function Agents() {
             <DialogTitle>{selectedAgent?.name}</DialogTitle>
             <DialogDescription>{selectedAgent?.description}</DialogDescription>
           </DialogHeader>
-          <div className="bg-black border border-neutral-800 p-4 rounded-lg">
-            <p className="text-xs text-neutral-500 mb-2 font-medium">Directory</p>
-            <code className="text-xs text-neutral-300">{selectedAgent?.directory}</code>
+          <div className="space-y-4">
+            <div className="bg-black border border-neutral-800 p-4 rounded-lg">
+              <p className="text-xs text-neutral-500 mb-2 font-medium">Directory</p>
+              <code className="text-xs text-neutral-300 break-all">{selectedAgent?.directory || 'Not available'}</code>
+            </div>
+            
+            {selectedAgent?.requires?.bins && (
+              <div className="bg-black border border-neutral-800 p-4 rounded-lg">
+                <p className="text-xs text-neutral-500 mb-2 font-medium">Dependencies</p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedAgent.requires.bins.map(bin => (
+                    <Badge key={bin} variant="outline">{bin}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

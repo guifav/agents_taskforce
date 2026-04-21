@@ -13,6 +13,7 @@ from api.routes import agents, github, metrics, workflows
 from api.websocket.manager import ConnectionManager
 from models.database import init_db
 from workers.celery_app import celery_app
+from services.agent_discovery import agent_discovery
 
 
 @asynccontextmanager
@@ -86,6 +87,12 @@ async def dashboard_overview():
         "today_cost": 0.0,
         "today_tokens": 0
     }
+
+
+@app.get("/api/system/status")
+async def system_status():
+    """Get system status including OpenClaw availability"""
+    return agent_discovery.get_system_status()
 
 
 if __name__ == "__main__":
