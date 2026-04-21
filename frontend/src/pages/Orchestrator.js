@@ -94,13 +94,13 @@ const WorkflowCard = ({ workflow, onReview, onFix, onMerge }) => {
             {workflow.status === 'code_review' && (
               <Button size="sm" onClick={() => onReview(workflow)}>
                 <GitBranch className="w-4 h-4 mr-1" />
-                Review PR
+                Codex Review
               </Button>
             )}
             {workflow.status === 'changes_needed' && (
               <Button size="sm" variant="outline" onClick={() => onFix(workflow)}>
                 <RefreshCw className="w-4 h-4 mr-1" />
-                Apply Fixes
+                Claude Fix
               </Button>
             )}
             {workflow.status === 'approved' && (

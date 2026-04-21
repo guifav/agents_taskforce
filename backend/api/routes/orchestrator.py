@@ -62,49 +62,53 @@ def run_agent_task(workflow_id: str, task_type: str, params: dict):
     workflow = workflows[workflow_id]
     
     if task_type == "develop":
-        # Trigger Claude Code or Codex to develop the fix
+        # Claude Code develops the fix
         issue_number = params["issue_number"]
         repo = f"{params['repo_owner']}/{params['repo_name']}"
         
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Starting development for issue #{issue_number}")
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Claude Code: Starting development for issue #{issue_number}")
         
         # In production, this would spawn a subprocess or use OpenClaw agent
         # For now, simulate the workflow
         workflow["status"] = WorkflowStatus.IN_PROGRESS
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Cloning repository...")
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Analyzing issue...")
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Implementing fix...")
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Claude Code: Cloning repository...")
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Claude Code: Analyzing issue...")
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Claude Code: Implementing fix...")
         
         # Simulate PR creation
         workflow["pr_number"] = params.get("simulated_pr", 999)
         workflow["status"] = WorkflowStatus.CODE_REVIEW
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] PR #{workflow['pr_number']} created")
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Claude Code: PR #{workflow['pr_number']} created")
         
     elif task_type == "review":
+        # Codex reviews the PR (initial review or re-review)
         pr_number = params["pr_number"]
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Starting Codex review for PR #{pr_number}")
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Starting code review for PR #{pr_number}")
         workflow["status"] = WorkflowStatus.CODE_REVIEW
         
         # Simulate review
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Analyzing code changes...")
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Checking for bugs...")
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Review completed")
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Analyzing code changes...")
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Checking for bugs...")
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Review completed")
         
         # Randomly decide if approved or needs changes (for demo)
         import random
         if random.random() > 0.3:  # 70% approval rate
             workflow["status"] = WorkflowStatus.APPROVED
-            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] PR approved ✓")
+            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: PR approved ✓")
         else:
             workflow["status"] = WorkflowStatus.CHANGES_NEEDED
-            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Changes requested")
+            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Changes requested - awaiting Claude Code fixes")
             
     elif task_type == "fix":
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Applying fixes based on review...")
+        # Claude Code applies fixes based on Codex review feedback
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Claude Code: Applying fixes based on Codex review...")
         workflow["status"] = WorkflowStatus.IN_PROGRESS
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Changes committed")
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Claude Code: Analyzing review comments...")
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Claude Code: Implementing corrections...")
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Claude Code: Changes committed")
         workflow["status"] = WorkflowStatus.CODE_REVIEW
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Ready for re-review")
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Ready for Codex re-review")
         
     elif task_type == "merge_deploy":
         pr_number = params["pr_number"]
