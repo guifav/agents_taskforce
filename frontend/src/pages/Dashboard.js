@@ -4,12 +4,10 @@ import {
   Activity, 
   Users, 
   GitPullRequest, 
-  AlertCircle, 
   DollarSign,
-  Cpu,
-  Clock
+  ArrowUpRight,
+  Loader2
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 
 const fetchDashboard = async () => {
   const res = await fetch('/api/dashboard');
@@ -21,93 +19,42 @@ const fetchMetrics = async () => {
   return res.json();
 };
 
-function StatCard({ title, value, subtitle, icon: Icon, color }) {
-  return (
-    <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-gray-400 text-sm">{title}</p>
-          <p className="text-2xl font-bold mt-1">{value}</p>
-          {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
-        </div>
-        <div className={`p-3 rounded-lg ${color}`}>
-          <Icon className="w-6 h-6 text-white" />
-        </div>
-      </div>
-    </div>
-  );
-}
+const fetchAgents = async () => {
+  const res = await fetch('/api/agents');
+  return res.json();
+};
 
-function AgentStatusRow({ agent }) {
-  const statusColors = {
-    idle: 'bg-green-500',
-    busy: 'bg-yellow-500',
-    error: 'bg-red-500',
-    offline: 'bg-gray-500'
-  };
-
+function StatCard({ title, value, subtitle, icon: Icon, trend }) {
   return (
-    <div className="flex items-center justify-between py-3 border-b border-gray-700 last:border-0">
-      <div className="flex items-center gap-3">
-        <div className={`w-2 h-2 rounded-full ${statusColors[agent.status]} animate-pulse`}></div>
-        <div>
-          <p className="font-medium">{agent.name}</p>
-          <p className="text-xs text-gray-400">{agent.skill}</p>
+    <div className="bg-neutral-950 border border-neutral-900 rounded-xl p-6 hover:border-neutral-800 transition-colors">
+      <div className="flex items-start justify-between mb-4">
+        <div className="p-2 bg-neutral-900 rounded-lg">
+          <Icon className="w-5 h-5 text-[#ffbe00]" />
         </div>
-      </div>
-      <div className="text-right">
-        <span className={`px-2 py-1 rounded text-xs ${
-          agent.status === 'idle' ? 'bg-green-900 text-green-300' :
-          agent.status === 'busy' ? 'bg-yellow-900 text-yellow-300' :
-          'bg-red-900 text-red-300'
-        }`}>
-          {agent.status}
-        </span>
-        {agent.current_task && (
-          <p className="text-xs text-gray-400 mt-1 truncate max-w-xs">{agent.current_task}</p>
+        {trend && (
+          <span className="text-xs text-neutral-500 flex items-center gap-1">
+            {trend}
+            <ArrowUpRight className="w-3 h-3" />
+          </span>
         )}
       </div>
-    </div>
-  );
-}
-
-function RecentActivity() {
-  const activities = [
-    { id: 1, message: 'Code reviewer completed PR #242 review', time: '2 min ago', type: 'success' },
-    { id: 2, message: 'QA tester started smoke tests', time: '5 min ago', type: 'info' },
-    { id: 3, message: 'GitHub guardian found 3 new PRs', time: '10 min ago', type: 'info' },
-  ];
-
-  return (
-    <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-      <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-      <div className="space-y-3">
-        {activities.map(activity => (
-          <div key={activity.id} className="flex items-start gap-3">
-            <div className={`w-2 h-2 rounded-full mt-2 ${
-              activity.type === 'success' ? 'bg-green-500' : 'bg-blue-500'
-            }`}></div>
-            <div className="flex-1">
-              <p className="text-sm">{activity.message}</p>
-              <p className="text-xs text-gray-400">{activity.time}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      <p className="text-neutral-500 text-sm mb-1">{title}</p>
+      <p className="text-2xl font-semibold">{value}</p>
+      {subtitle && <p className="text-xs text-neutral-600 mt-1">{subtitle}</p>}
     </div>
   );
 }
 
 function Dashboard() {
-  const { data: dashboard, isLoading } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: fetchDashboard,
+  const { data: metrics, isLoading: metricsLoading } = useQuery({
+    queryKey: ['metrics'],
+    queryFn: fetchMetrics,
     refetchInterval: 30000
   });
 
-  const { data: metrics } = useQuery({
-    queryKey: ['metrics'],
-    queryFn: fetchMetrics,
+  const { data: agents, isLoading: agentsLoading } = useQuery({
+    queryKey: ['agents'],
+    queryFn: fetchAgents,
     refetchInterval: 30000
   });
 
@@ -115,119 +62,87 @@ function Dashboard() {
 
   useEffect(() => {
     const ws = new WebSocket(`ws://${window.location.host}/ws`);
-    
     ws.onopen = () => setWsStatus('connected');
     ws.onclose = () => setWsStatus('disconnected');
     ws.onerror = () => setWsStatus('error');
-
     return () => ws.close();
   }, []);
 
-  if (isLoading) {
+  if (metricsLoading || agentsLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Activity className="w-8 h-8 animate-spin text-blue-500" />
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-[#ffbe00]" />
       </div>
     );
   }
 
-  const agents = [
-    { id: 1, name: 'code-reviewer', skill: 'Code Review', status: 'idle', current_task: null },
-    { id: 2, name: 'qa-tester', skill: 'QA Testing', status: 'busy', current_task: 'Running smoke tests for PR #242' },
-    { id: 3, name: 'github-guardian', skill: 'GitHub Monitor', status: 'idle', current_task: null },
-  ];
+  const activeAgents = agents?.filter(a => a.status === 'active').length || 0;
+  const idleAgents = agents?.filter(a => a.status === 'idle').length || 0;
 
   return (
-    <div className="space-y-6">
+    <div className="p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-bold">Dashboard</h2>
-          <p className="text-gray-400">Overview of your agent team</p>
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <p className="text-neutral-500 text-sm mt-1">Overview of your agent team</p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-400">WebSocket:</span>
-          <span className={`px-2 py-1 rounded text-xs ${
-            wsStatus === 'connected' ? 'bg-green-900 text-green-300' :
-            wsStatus === 'connecting' ? 'bg-yellow-900 text-yellow-300' :
-            'bg-red-900 text-red-300'
-          }`}>
-            {wsStatus}
-          </span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-950 border border-neutral-900 rounded-lg">
+            <div className={`w-2 h-2 rounded-full ${
+              wsStatus === 'connected' ? 'bg-[#ffbe00]' : 'bg-red-500'
+            }`} />
+            <span className="text-xs text-neutral-500 capitalize">{wsStatus}</span>
+          </div>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
           title="Active Agents"
-          value={metrics?.active_agents || 3}
-          subtitle={`${metrics?.busy_agents || 1} busy, ${metrics?.idle_agents || 2} idle`}
+          value={agents?.length || 0}
+          subtitle={`${activeAgents} active, ${idleAgents} idle`}
           icon={Users}
-          color="bg-blue-600"
         />
         <StatCard
           title="Open PRs"
           value={metrics?.open_prs || 6}
-          subtitle={`${metrics?.open_issues || 9} open issues`}
+          subtitle={`${metrics?.open_issues || 9} issues`}
           icon={GitPullRequest}
-          color="bg-purple-600"
+          trend="+2"
         />
         <StatCard
           title="Today's Cost"
           value={`$${metrics?.today_cost?.toFixed(2) || '2.75'}`}
           subtitle={`${metrics?.today_tokens?.toLocaleString() || '32,000'} tokens`}
           icon={DollarSign}
-          color="bg-green-600"
         />
         <StatCard
           title="Pending Jobs"
           value={metrics?.pending_jobs || 5}
           subtitle={`${metrics?.running_jobs || 2} running`}
-          icon={Clock}
-          color="bg-orange-600"
+          icon={Activity}
         />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Agent Status */}
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Agent Status</h3>
-            <button className="text-sm text-blue-400 hover:text-blue-300">View All</button>
-          </div>
-          <div>
-            {agents.map(agent => (
-              <AgentStatusRow key={agent.id} agent={agent} />
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <RecentActivity />
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-        <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-        <div className="flex flex-wrap gap-3">
-          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-2">
-            <GitPullRequest className="w-4 h-4" />
-            Review Open PRs
-          </button>
-          <button className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg flex items-center gap-2">
-            <Activity className="w-4 h-4" />
-            Spawn Code Reviewer
-          </button>
-          <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg flex items-center gap-2">
-            <Cpu className="w-4 h-4" />
-            Run QA Tests
-          </button>
-          <button className="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            Check GitHub Issues
-          </button>
+      {/* Recent Activity */}
+      <div className="bg-neutral-950 border border-neutral-900 rounded-xl p-6">
+        <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
+        <div className="space-y-3">
+          {[
+            { message: 'github-guardian scanned 3 repositories', time: '2 min ago' },
+            { message: 'cost-watcher reported daily usage', time: '15 min ago' },
+            { message: 'security-scout found 1 medium alert', time: '1 hour ago' },
+          ].map((activity, i) => (
+            <div key={i} className="flex items-center justify-between py-3 border-b border-neutral-900 last:border-0">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-[#ffbe00]" />
+                <span className="text-sm">{activity.message}</span>
+              </div>
+              <span className="text-xs text-neutral-500">{activity.time}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

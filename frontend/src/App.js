@@ -4,11 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { 
   Activity, 
   GitPullRequest, 
-  AlertCircle, 
-  Cpu, 
-  DollarSign,
+  Users,
   Workflow,
-  Users
+  BarChart3
 } from 'lucide-react';
 
 import Dashboard from './pages/Dashboard';
@@ -23,90 +21,97 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <div className="min-h-screen bg-gray-900 text-white">
+        <div className="min-h-screen bg-black text-white font-['Inter']">
           {/* Sidebar */}
-          <div className="fixed left-0 top-0 h-full w-64 bg-gray-800 border-r border-gray-700">
-            <div className="p-6">
-              <h1 className="text-xl font-bold flex items-center gap-2">
-                <Activity className="w-6 h-6 text-blue-500" />
-                Agent Dashboard
-              </h1>
-              <p className="text-xs text-gray-400 mt-1">OpenClaw Orchestrator</p>
+          <div className="fixed left-0 top-0 h-full w-16 bg-neutral-950 border-r border-neutral-900 flex flex-col items-center py-6">
+            {/* Logo */}
+            <div className="mb-8">
+              <div className="w-10 h-10 rounded-lg bg-[#ffbe00] flex items-center justify-center">
+                <Activity className="w-5 h-5 text-black" />
+              </div>
             </div>
             
-            <nav className="px-4 space-y-2">
+            {/* Navigation */}
+            <nav className="flex flex-col gap-2">
               <NavLink 
                 to="/" 
                 className={({isActive}) => 
-                  `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-700'
+                  `p-3 rounded-lg transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-[#ffbe00] text-black' 
+                      : 'text-neutral-500 hover:text-white hover:bg-neutral-900'
                   }`
                 }
+                title="Dashboard"
               >
                 <Activity className="w-5 h-5" />
-                Dashboard
               </NavLink>
               
               <NavLink 
                 to="/agents" 
                 className={({isActive}) => 
-                  `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-700'
+                  `p-3 rounded-lg transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-[#ffbe00] text-black' 
+                      : 'text-neutral-500 hover:text-white hover:bg-neutral-900'
                   }`
                 }
+                title="Agents"
               >
                 <Users className="w-5 h-5" />
-                Agents
               </NavLink>
               
               <NavLink 
                 to="/github" 
                 className={({isActive}) => 
-                  `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-700'
+                  `p-3 rounded-lg transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-[#ffbe00] text-black' 
+                      : 'text-neutral-500 hover:text-white hover:bg-neutral-900'
                   }`
                 }
+                title="GitHub"
               >
                 <GitPullRequest className="w-5 h-5" />
-                GitHub
               </NavLink>
               
               <NavLink 
                 to="/workflows" 
                 className={({isActive}) => 
-                  `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-700'
+                  `p-3 rounded-lg transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-[#ffbe00] text-black' 
+                      : 'text-neutral-500 hover:text-white hover:bg-neutral-900'
                   }`
                 }
+                title="Workflows"
               >
                 <Workflow className="w-5 h-5" />
-                Workflows
               </NavLink>
               
               <NavLink 
                 to="/metrics" 
                 className={({isActive}) => 
-                  `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-700'
+                  `p-3 rounded-lg transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-[#ffbe00] text-black' 
+                      : 'text-neutral-500 hover:text-white hover:bg-neutral-900'
                   }`
                 }
+                title="Metrics"
               >
-                <DollarSign className="w-5 h-5" />
-                Metrics
+                <BarChart3 className="w-5 h-5" />
               </NavLink>
             </nav>
             
-            {/* Connection Status */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                <span className="text-gray-400">Connected</span>
-              </div>
+            {/* Status indicator */}
+            <div className="mt-auto">
+              <div className="w-2 h-2 rounded-full bg-[#ffbe00] animate-pulse" title="Connected" />
             </div>
           </div>
           
           {/* Main Content */}
-          <div className="ml-64 p-8">
+          <div className="ml-16 min-h-screen">
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/agents" element={<Agents />} />

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Play, Settings, Clock, FileText, Loader2 } from 'lucide-react';
+import { Play, Settings, Loader2, Terminal, X } from 'lucide-react';
 
 const fetchAgents = async () => {
   const res = await fetch('/api/agents');
@@ -16,27 +16,15 @@ const runAgent = async (agentId) => {
   return res.json();
 };
 
-const fetchAgentConfig = async (agentId) => {
-  const res = await fetch(`/api/agents/${agentId}/config`);
-  return res.json();
-};
-
 function Agents() {
   const queryClient = useQueryClient();
   const [selectedAgent, setSelectedAgent] = useState(null);
-  const [showConfig, setShowConfig] = useState(false);
   const [runOutput, setRunOutput] = useState(null);
 
   const { data: agents, isLoading } = useQuery({
     queryKey: ['agents'],
     queryFn: fetchAgents,
     refetchInterval: 30000
-  });
-
-  const { data: configData } = useQuery({
-    queryKey: ['agent-config', selectedAgent?.id],
-    queryFn: () => fetchAgentConfig(selectedAgent.id),
-    enabled: !!selectedAgent && showConfig
   });
 
   const runMutation = useMutation({
@@ -48,8 +36,8 @@ function Agents() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-[#ffbe00]" />
       </div>
     );
   }
@@ -60,10 +48,13 @@ function Agents() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Agent Team</h2>
-        <p className="text-gray-400">Your installed OpenClaw agents</p>
+    <div className="p-8 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold">Agents</h1>
+        <p className="text-neutral-500 text-sm mt-1">
+          {agents?.length || 0} agents installed
+        </p>
       </div>
 
       {/* Agent Grid */}
@@ -71,41 +62,35 @@ function Agents() {
         {(agents || []).map(agent => (
           <div 
             key={agent.id} 
-            className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-gray-600 transition-colors"
+            className="bg-neutral-950 border border-neutral-900 rounded-xl p-6 hover:border-neutral-800 transition-all group"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center">
-                  <span className="text-lg font-bold">{agent.name.charAt(0).toUpperCase()}</span>
+                <div className="w-10 h-10 rounded-lg bg-neutral-900 flex items-center justify-center text-[#ffbe00] font-semibold">
+                  {agent.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="font-semibold">{agent.name}</h3>
-                  <p className="text-xs text-gray-400">{agent.id}</p>
+                  <h3 className="font-medium">{agent.name}</h3>
+                  <p className="text-xs text-neutral-500">{agent.id}</p>
                 </div>
               </div>
-              <span className={`px-2 py-1 rounded text-xs ${
-                agent.status === 'active' ? 'bg-green-900 text-green-300' :
-                agent.status === 'running' ? 'bg-blue-900 text-blue-300' :
-                'bg-gray-700 text-gray-300'
-              }`}>
-                {agent.status}
-              </span>
+              <div className={`w-2 h-2 rounded-full ${
+                agent.status === 'active' ? 'bg-[#ffbe00]' :
+                agent.status === 'running' ? 'bg-blue-500 animate-pulse' :
+                'bg-neutral-600'
+              }`} />
             </div>
 
-            <p className="text-sm text-gray-400 mb-4 line-clamp-2">
-              {agent.description}
+            <p className="text-sm text-neutral-400 mb-4 line-clamp-2">
+              {agent.description || 'No description available'}
             </p>
 
-            <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
+            <div className="flex items-center gap-2 text-xs text-neutral-600 mb-4">
               {agent.has_config && (
-                <span className="flex items-center gap-1">
-                  <Settings className="w-3 h-3" />
-                  Config
-                </span>
+                <span className="px-2 py-1 bg-neutral-900 rounded">config</span>
               )}
               {agent.requires?.bins && (
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
+                <span className="px-2 py-1 bg-neutral-900 rounded">
                   {agent.requires.bins.length} deps
                 </span>
               )}
@@ -115,7 +100,7 @@ function Agents() {
               <button 
                 onClick={() => handleRun(agent.id)}
                 disabled={runMutation.isPending}
-                className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 rounded-lg text-sm flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 bg-[#ffbe00] hover:bg-[#e6ac00] disabled:bg-neutral-800 disabled:text-neutral-500 text-black rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
               >
                 {runMutation.isPending && runMutation.variables === agent.id ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -125,92 +110,83 @@ function Agents() {
                 Run
               </button>
               <button 
-                onClick={() => { setSelectedAgent(agent); setShowConfig(true); }}
-                className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg"
+                onClick={() => setSelectedAgent(agent)}
+                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 rounded-lg transition-colors"
               >
-                <Settings className="w-4 h-4" />
+                <Settings className="w-4 h-4 text-neutral-400" />
               </button>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Run Output */}
+      {/* Run Output Modal */}
       {runOutput && (
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Execution Output</h3>
-            <button 
-              onClick={() => setRunOutput(null)}
-              className="text-gray-400 hover:text-white"
-            >
-              Close
-            </button>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-neutral-950 border border-neutral-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-auto">
+            <div className="flex items-center justify-between p-4 border-b border-neutral-900">
+              <div className="flex items-center gap-2">
+                <Terminal className="w-5 h-5 text-[#ffbe00]" />
+                <h3 className="font-semibold">Execution Output</h3>
+              </div>
+              <button 
+                onClick={() => setRunOutput(null)}
+                className="p-2 hover:bg-neutral-900 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="p-4">
+              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs mb-4 ${
+                runOutput.success 
+                  ? 'bg-[#ffbe00]/10 text-[#ffbe00]' 
+                  : 'bg-red-500/10 text-red-500'
+              }`}>
+                {runOutput.success ? 'Success' : 'Failed'}
+              </div>
+
+              {runOutput.stdout && (
+                <div className="mb-4">
+                  <p className="text-xs text-neutral-500 mb-2">Output:</p>
+                  <pre className="bg-black p-4 rounded-lg text-sm overflow-x-auto text-neutral-300 font-mono">
+                    {runOutput.stdout}
+                  </pre>
+                </div>
+              )}
+
+              {runOutput.stderr && (
+                <div>
+                  <p className="text-xs text-neutral-500 mb-2">Errors:</p>
+                  <pre className="bg-black p-4 rounded-lg text-sm overflow-x-auto text-red-400 font-mono">
+                    {runOutput.stderr}
+                  </pre>
+                </div>
+              )}
+            </div>
           </div>
-          
-          <div className={`p-3 rounded mb-4 ${runOutput.success ? 'bg-green-900/50' : 'bg-red-900/50'}`}>
-            <p className="text-sm">
-              Status: {runOutput.success ? 'Success' : 'Failed'}
-            </p>
-          </div>
-
-          {runOutput.stdout && (
-            <div className="mb-4">
-              <p className="text-xs text-gray-400 mb-2">Output:</p>
-              <pre className="bg-gray-900 p-3 rounded text-sm overflow-x-auto">
-                {runOutput.stdout}
-              </pre>
-            </div>
-          )}
-
-          {runOutput.stderr && (
-            <div className="mb-4">
-              <p className="text-xs text-gray-400 mb-2">Errors:</p>
-              <pre className="bg-red-900/20 p-3 rounded text-sm overflow-x-auto text-red-300">
-                {runOutput.stderr}
-              </pre>
-            </div>
-          )}
-
-          {runOutput.error && (
-            <div className="bg-red-900/20 p-3 rounded">
-              <p className="text-sm text-red-300">{runOutput.error}</p>
-            </div>
-          )}
-
-          <p className="text-xs text-gray-500 mt-2">
-            Timestamp: {new Date(runOutput.timestamp).toLocaleString()}
-          </p>
         </div>
       )}
 
-      {/* Config Modal */}
-      {showConfig && selectedAgent && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">
-                {selectedAgent.name} Configuration
-              </h3>
+      {/* Agent Config Modal */}
+      {selectedAgent && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-neutral-950 border border-neutral-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-auto">
+            <div className="flex items-center justify-between p-4 border-b border-neutral-900">
+              <h3 className="font-semibold">{selectedAgent.name}</h3>
               <button 
-                onClick={() => setShowConfig(false)}
-                className="text-gray-400 hover:text-white"
+                onClick={() => setSelectedAgent(null)}
+                className="p-2 hover:bg-neutral-900 rounded-lg transition-colors"
               >
-                Close
+                <X className="w-4 h-4" />
               </button>
             </div>
-
-            {configData?.config ? (
-              <pre className="bg-gray-900 p-4 rounded text-sm overflow-x-auto">
-                {JSON.stringify(configData.config, null, 2)}
-              </pre>
-            ) : (
-              <p className="text-gray-400">No configuration file found.</p>
-            )}
-
-            <div className="mt-4 p-4 bg-gray-900 rounded">
-              <p className="text-sm text-gray-400 mb-2">Skill Directory:</p>
-              <code className="text-xs">{selectedAgent.directory}</code>
+            <div className="p-4">
+              <p className="text-sm text-neutral-400 mb-4">{selectedAgent.description}</p>
+              <div className="bg-black p-4 rounded-lg">
+                <p className="text-xs text-neutral-500 mb-2">Directory:</p>
+                <code className="text-xs text-neutral-300">{selectedAgent.directory}</code>
+              </div>
             </div>
           </div>
         </div>
