@@ -7,43 +7,43 @@ A real-time web dashboard for managing OpenClaw agent teams, monitoring workflow
 
 ![Dashboard Preview](docs/images/dashboard-preview.png)
 
-## 🎯 Features
+## Features
 
-- **📊 Real-time Monitoring**: Track active agents, their status, and current tasks
-- **📁 GitHub Integration**: View open PRs and issues from configured repositories
-- **💰 Cost Tracking**: Monitor token usage and costs per job/agent/model
-- **🤖 Agent Flow Visualization**: See agents working in real-time with workflow diagrams
-- **🎛️ Model Management**: Monitor which models are in use across your agent team
-- **🔔 Event Stream**: Real-time updates from agent activities
+- **Real-time Monitoring**: Track active agents, their status, and current tasks
+- **GitHub Integration**: View open PRs and issues from configured repositories
+- **Cost Tracking**: Monitor token usage and costs per job/agent/model
+- **Agent Flow Visualization**: See agents working in real-time with workflow diagrams
+- **Model Management**: Monitor which models are in use across your agent team
+- **Event Stream**: Real-time updates from agent activities
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Agent Orchestrator Dashboard             │
-├─────────────────────────────────────────────────────────────┤
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │
-│  │   Frontend   │  │    API       │  │  Agent Workers   │  │
-│  │  (React)     │  │  (FastAPI)   │  │   (Python)       │  │
-│  └──────┬───────┘  └──────┬───────┘  └────────┬─────────┘  │
-│         │                 │                    │            │
-│         └─────────────────┴────────────────────┘            │
-│                           │                                 │
-│                    ┌──────┴──────┐                         │
-│                    │  WebSocket  │                         │
-│                    │   Server    │                         │
-│                    └──────┬──────┘                         │
-│                           │                                 │
-│         ┌─────────────────┼─────────────────┐              │
-│         ▼                 ▼                 ▼              │
-│    ┌─────────┐      ┌─────────┐      ┌──────────┐         │
-│    │  Redis  │      │PostgreSQL│      │  GitHub  │         │
-│    │ (Cache) │      │ (State)  │      │   API    │         │
-│    └─────────┘      └─────────┘      └──────────┘         │
-└─────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------+
+|                    Agent Orchestrator Dashboard             |
++-------------------------------------------------------------+
+|  +--------------+  +--------------+  +------------------+  |
+|  |   Frontend   |  |    API       |  |  Agent Workers   |  |
+|  |  (React)     |  |  (FastAPI)   |  |   (Python)       |  |
+|  +------+-------+  +------+-------+  +--------+---------+  |
+|         |                 |                    |            |
+|         +-----------------+--------------------+            |
+|                           |                                 |
+|                    +------+------+                         |
+|                    |  WebSocket  |                         |
+|                    |   Server    |                         |
+|                    +------+------+                         |
+|                           |                                 |
+|         +-----------------+-----------------+              |
+|         |                 |                 |              |
+|    +---------+      +---------+      +----------+         |
+|    |  Redis  |      |PostgreSQL|      |  GitHub  |         |
+|    | (Cache) |      | (State)  |      |   API    |         |
+|    +---------+      +---------+      +----------+         |
++-------------------------------------------------------------+
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -69,7 +69,7 @@ docker-compose up -d
 open http://localhost:8080
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 agent-orchestrator-dashboard/
@@ -98,7 +98,7 @@ agent-orchestrator-dashboard/
     └── contributing.md
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -135,7 +135,7 @@ agents:
       - guifav/sync
 ```
 
-## 📊 Dashboard Views
+## Dashboard Views
 
 ### 1. Agent Overview
 ![Agents View](docs/images/agents-view.png)
@@ -169,7 +169,7 @@ agents:
 - Budget alerts and limits
 - Historical trends
 
-## 🔌 API Endpoints
+## API Endpoints
 
 ### Agents
 - `GET /api/agents` - List all agents
@@ -188,7 +188,7 @@ agents:
 - `GET /api/metrics/models` - Model usage
 - `WS /api/stream` - Real-time events
 
-## 🧪 Development
+## Development
 
 ```bash
 # Start development environment
@@ -204,7 +204,7 @@ make lint
 make build
 ```
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
@@ -216,15 +216,15 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 - [ ] Integration with LangSmith
 - [ ] Mobile app companion
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - OpenClaw community for the agent orchestration patterns
 - Contributors to the multi-agent architecture research
 
 ---
 
-**Built with ❤️ for the OpenClaw ecosystem**
+**Built for the OpenClaw ecosystem**

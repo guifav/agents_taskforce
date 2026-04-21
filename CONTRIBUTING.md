@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing! This document provides guidelines for contributing to this project.
 
-## 🚀 Getting Started
+## Getting Started
 
 1. Fork the repository
 2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/agent-orchestrator-dashboard.git`
@@ -10,7 +10,7 @@ Thank you for your interest in contributing! This document provides guidelines f
 4. Make your changes
 5. Submit a pull request
 
-## 📋 Development Setup
+## Development Setup
 
 ```bash
 # Install dependencies
@@ -21,7 +21,7 @@ cd ../frontend && npm install
 docker-compose -f docker-compose.dev.yml up
 ```
 
-## 🎯 Areas for Contribution
+## Areas for Contribution
 
 ### High Priority
 - [ ] Kubernetes deployment manifests
@@ -43,7 +43,7 @@ docker-compose -f docker-compose.dev.yml up
 - [ ] Slack/Discord notifications
 - [ ] PagerDuty alerting
 
-## 📝 Code Style
+## Code Style
 
 ### Python (Backend)
 - Follow PEP 8
@@ -57,7 +57,7 @@ docker-compose -f docker-compose.dev.yml up
 - Use Tailwind CSS for styling
 - Write tests for new components
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Backend tests
@@ -67,15 +67,15 @@ cd backend && pytest
 cd frontend && npm test
 ```
 
-## 📤 Submitting Changes
+## Submitting Changes
 
 1. Ensure tests pass
 2. Update documentation
 3. Add entry to CHANGELOG.md
 4. Submit PR with clear description
 
-## 💬 Questions?
+## Questions?
 
 Open an issue or join our Discord: [link]
 
-Thank you for contributing! 🎉
+Thank you for contributing!

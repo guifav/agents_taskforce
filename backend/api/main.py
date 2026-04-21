@@ -20,10 +20,10 @@ async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
     await init_db()
-    print(f"🚀 Agent Dashboard started at {datetime.utcnow()}")
+    print(f"[START] Agent Dashboard started at {datetime.utcnow()}")
     yield
     # Shutdown
-    print(f"🛑 Agent Dashboard stopped at {datetime.utcnow()}")
+    print(f"[STOP] Agent Dashboard stopped at {datetime.utcnow()}")
 
 
 app = FastAPI(
