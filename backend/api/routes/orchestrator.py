@@ -91,25 +91,30 @@ def run_agent_task(workflow_id: str, task_type: str, params: dict):
         workflow["status"] = WorkflowStatus.CODE_REVIEW
         
         try:
-            # Execute real Codex CLI with model 5.4 and xhigh reasoning
-            # Use full path or ensure PATH includes nvm
+            # Check if paths exist
             import os
-            env = os.environ.copy()
-            env['PATH'] = '/Users/gui/.nvm/versions/node/v22.17.0/bin:' + env.get('PATH', '')
+            pr_path = f"/tmp/pr-{pr_number}"
+            repo_path = f"/tmp/{repo_name}"
             
-            # Use full path to codex
+            # Use repo path if PR path doesn't exist
+            review_path = pr_path if os.path.exists(pr_path) else repo_path
+            
+            # Execute real Codex CLI with model 5.4 and xhigh reasoning
+            # Use -c config options for model and reasoning
             codex_path = "/Users/gui/.nvm/versions/node/v22.17.0/bin/codex"
             cmd = [
                 codex_path,
                 "review",
-                f"/tmp/pr-{pr_number}",  # Path to PR checkout
-                "--model", "5.4",
-                "--reasoning", "xhigh",
-                "--approval-mode", "auto",
-                "--json"  # Get structured output
+                review_path,
+                "-c", "model=\"gpt-5.4\"",
+                "-c", "model_reasoning_effort=\"xhigh\"",
+                "-c", "approval_mode=\"auto\"",
+                "Review this PR for code quality, bugs, and best practices"
             ]
             
-            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Executing: {' '.join(cmd)}")
+            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Reviewing path: {review_path}")
+            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Model=gpt-5.4, Reasoning=xhigh")
+            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Executing codex review...")
             
             # Run Codex (with timeout)
             result = subprocess.run(
@@ -117,8 +122,7 @@ def run_agent_task(workflow_id: str, task_type: str, params: dict):
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minute timeout
-                cwd=f"/tmp/{repo_name}" if repo_name else "/tmp",
-                env=env
+                cwd=review_path if os.path.exists(review_path) else "/tmp"
             )
             
             workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Exit code: {result.returncode}")
