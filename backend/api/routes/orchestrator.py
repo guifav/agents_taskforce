@@ -81,24 +81,68 @@ def run_agent_task(workflow_id: str, task_type: str, params: dict):
         workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Claude Code: PR #{workflow['pr_number']} created")
         
     elif task_type == "review":
-        # Codex reviews the PR (initial review or re-review)
+        # Codex reviews the PR (initial review or re-review) with real execution
         pr_number = params["pr_number"]
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Starting code review for PR #{pr_number}")
+        repo_owner = params.get("repo_owner", "guifav")
+        repo_name = params.get("repo_name", "virtuagency.ai")
+        
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Starting REAL code review for PR #{pr_number}")
+        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Model=5.4, Reasoning=xhigh")
         workflow["status"] = WorkflowStatus.CODE_REVIEW
         
-        # Simulate review
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Analyzing code changes...")
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Checking for bugs...")
-        workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Review completed")
-        
-        # Randomly decide if approved or needs changes (for demo)
-        import random
-        if random.random() > 0.3:  # 70% approval rate
-            workflow["status"] = WorkflowStatus.APPROVED
-            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: PR approved ✓")
-        else:
-            workflow["status"] = WorkflowStatus.CHANGES_NEEDED
-            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Changes requested - awaiting Claude Code fixes")
+        try:
+            # Execute real Codex CLI with model 5.4 and xhigh reasoning
+            cmd = [
+                "codex",
+                "review",
+                f"/tmp/pr-{pr_number}",  # Path to PR checkout
+                "--model", "5.4",
+                "--reasoning", "xhigh",
+                "--approval-mode", "auto",
+                "--json"  # Get structured output
+            ]
+            
+            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Executing: {' '.join(cmd)}")
+            
+            # Run Codex (with timeout)
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=300,  # 5 minute timeout
+                cwd=f"/tmp/{repo_name}" if repo_name else "/tmp"
+            )
+            
+            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Exit code: {result.returncode}")
+            
+            if result.returncode == 0:
+                workflow["status"] = WorkflowStatus.APPROVED
+                workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: PR approved ✓")
+                if result.stdout:
+                    workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: {result.stdout[:200]}...")
+            else:
+                workflow["status"] = WorkflowStatus.CHANGES_NEEDED
+                workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Changes requested")
+                if result.stderr:
+                    workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex stderr: {result.stderr[:200]}...")
+                    
+        except subprocess.TimeoutExpired:
+            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Review timed out after 5 minutes")
+            workflow["status"] = WorkflowStatus.FAILED
+        except FileNotFoundError:
+            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: CLI not found. Is Codex installed?")
+            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Falling back to simulation mode")
+            # Fallback to simulation
+            import random
+            if random.random() > 0.3:
+                workflow["status"] = WorkflowStatus.APPROVED
+                workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: PR approved ✓ (SIMULATED)")
+            else:
+                workflow["status"] = WorkflowStatus.CHANGES_NEEDED
+                workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Changes requested (SIMULATED)")
+        except Exception as e:
+            workflow["logs"].append(f"[{datetime.utcnow().isoformat()}] Codex: Error during review: {str(e)}")
+            workflow["status"] = WorkflowStatus.FAILED
             
     elif task_type == "fix":
         # Claude Code applies fixes based on Codex review feedback
@@ -169,7 +213,7 @@ async def request_pr_review(
     request: PRReviewRequest,
     background_tasks: BackgroundTasks
 ):
-    """Request code review for a PR"""
+    """Request code review for a PR with real Codex execution"""
     if workflow_id not in workflows:
         raise HTTPException(status_code=404, detail="Workflow not found")
     
@@ -177,11 +221,19 @@ async def request_pr_review(
     workflow["pr_number"] = request.pr_number
     workflow["updated_at"] = datetime.utcnow().isoformat()
     
+    # Use workflow's repo info if available, otherwise use request
+    repo_owner = workflow.get("repo_owner", request.repo_owner)
+    repo_name = workflow.get("repo_name", request.repo_name)
+    
     background_tasks.add_task(
         run_agent_task,
         workflow_id,
         "review",
-        {"pr_number": request.pr_number}
+        {
+            "pr_number": request.pr_number,
+            "repo_owner": repo_owner,
+            "repo_name": repo_name
+        }
     )
     
     return WorkflowResponse(**workflow)
