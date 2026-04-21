@@ -75,7 +75,9 @@ function Agents() {
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{agent.emoji || '🤖'}</span>
+                <div className="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center">
+                  <span className="text-lg font-bold">{agent.name.charAt(0).toUpperCase()}</span>
+                </div>
                 <div>
                   <h3 className="font-semibold">{agent.name}</h3>
                   <p className="text-xs text-gray-400">{agent.id}</p>

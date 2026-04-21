@@ -49,11 +49,11 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - OPENCLAW_PATH=${OPENCLAW_PATH:-/usr/local/bin/openclaw}
-      - OPENCLAW_WORKSPACE=${OPENCLAW_WORKSPACE:-/Users/gui/.openclaw/workspace}
+      - OPENCLAW_WORKSPACE=/openclaw/workspace
       - DEBUG=${DEBUG:-false}
       - LOG_LEVEL=${LOG_LEVEL:-info}
     volumes:
-      - ${OPENCLAW_WORKSPACE:-/Users/gui/.openclaw/workspace}:/workspace:ro
+      - ${OPENCLAW_WORKSPACE:-/Users/gui/.openclaw/workspace}/../..:/openclaw:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - "${API_PORT:-8000}:8000"
@@ -93,9 +93,9 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - OPENCLAW_PATH=${OPENCLAW_PATH:-/usr/local/bin/openclaw}
-      - OPENCLAW_WORKSPACE=${OPENCLAW_WORKSPACE:-/Users/gui/.openclaw/workspace}
+      - OPENCLAW_WORKSPACE=/openclaw/workspace
     volumes:
-      - ${OPENCLAW_WORKSPACE:-/Users/gui/.openclaw/workspace}:/workspace:ro
+      - ${OPENCLAW_WORKSPACE:-/Users/gui/.openclaw/workspace}/../..:/openclaw:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
       - postgres

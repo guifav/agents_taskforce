@@ -9,6 +9,9 @@ from typing import List, Dict, Optional
 from datetime import datetime
 
 OPENCLAW_SKILLS_DIR = Path(os.getenv("OPENCLAW_WORKSPACE", "/Users/gui/.openclaw/workspace")).parent / "skills"
+# Fallback for Docker container structure
+if not OPENCLAW_SKILLS_DIR.exists():
+    OPENCLAW_SKILLS_DIR = Path("/openclaw/.openclaw/skills")
 
 
 class AgentDiscovery:
@@ -22,7 +25,11 @@ class AgentDiscovery:
         """List all available skills"""
         skills = []
         
+        print(f"[DEBUG] Looking for skills in: {self.skills_dir}")
+        print(f"[DEBUG] Directory exists: {self.skills_dir.exists()}")
+        
         if not self.skills_dir.exists():
+            print(f"[DEBUG] Skills directory not found: {self.skills_dir}")
             return skills
             
         for skill_dir in self.skills_dir.iterdir():
