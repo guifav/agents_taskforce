@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Separator = React.forwardRef(({ className = '', orientation = 'horizontal', ...props }, ref) => {
+export const Separator = React.forwardRef(({ className = '', orientation = 'horizontal', ...props }, ref) => {
   const orientations = {
     horizontal: 'h-px w-full',
     vertical: 'h-full w-px'
@@ -16,5 +16,3 @@ const Separator = React.forwardRef(({ className = '', orientation = 'horizontal'
 });
 
 Separator.displayName = 'Separator';
-
-export default Separator;
