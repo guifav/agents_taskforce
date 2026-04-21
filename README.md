@@ -5,7 +5,7 @@
 
 A real-time web dashboard for managing OpenClaw agent teams, monitoring workflows, and tracking costs across multiple AI models.
 
-![Dashboard Preview](docs/images/dashboard-preview.png)
+Automatically discovers and controls your installed OpenClaw skills from `~/.openclaw/skills/`.
 
 ## Features
 
@@ -138,32 +138,24 @@ agents:
 ## Dashboard Views
 
 ### 1. Agent Overview
-![Agents View](docs/images/agents-view.png)
-
-- Real-time status of all agents
-- Current task and progress
-- Cost accumulator per agent
-- Model usage statistics
+- **Real-time status** of all discovered agents from `~/.openclaw/skills/`
+- **Execute agents** directly from the UI
+- **View/edit configurations** (config.json)
+- **Schedule agents** via OpenClaw cron integration
 
 ### 2. GitHub Integration
-![GitHub View](docs/images/github-view.png)
-
 - Open PRs across repositories
 - Issue triage and assignment
 - PR review status
-- Integration with agent assignments
+- Trigger code-reviewer agent on PRs
 
 ### 3. Workflow Visualization
-![Workflow View](docs/images/workflow-view.png)
-
 - Visual flow of agent interactions
 - Handoff points between agents
 - Job queue and processing status
-- Bottleneck identification
+- Real-time updates via WebSocket
 
 ### 4. Cost Analytics
-![Cost View](docs/images/cost-view.png)
-
 - Token usage per model
 - Cost breakdown by agent/job
 - Budget alerts and limits
