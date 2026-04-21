@@ -1,234 +1,159 @@
 # Agent Orchestrator Dashboard
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![OpenClaw](https://img.shields.io/badge/OpenClaw-Compatible-blue)](https://openclaw.ai)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://docker.com)
+[![OpenClaw](https://img.shields.io/badge/OpenClaw-Compatible-orange)](https://openclaw.ai)
 
-A real-time web dashboard for managing OpenClaw agent teams, monitoring workflows, and tracking costs across multiple AI models.
+A modern, real-time dashboard for managing OpenClaw agent teams. Monitor your agents, track workflows, and visualize costs - all in one place.
 
-Automatically discovers and controls your installed OpenClaw skills from `~/.openclaw/skills/`.
+![Dashboard Preview](https://via.placeholder.com/800x400/000000/ffbe00?text=Agent+Orchestrator+Dashboard)
 
 ## Features
 
-- **Real-time Monitoring**: Track active agents, their status, and current tasks
-- **GitHub Integration**: View open PRs and issues from configured repositories
-- **Cost Tracking**: Monitor token usage and costs per job/agent/model
-- **Agent Flow Visualization**: See agents working in real-time with workflow diagrams
-- **Model Management**: Monitor which models are in use across your agent team
-- **Event Stream**: Real-time updates from agent activities
+- **Agent Management**: View all your OpenClaw skills in one place
+- **Real-time Status**: Monitor agent status and health
+- **Workflow Visualization**: See your agent pipelines in action
+- **GitHub Integration**: Track PRs and issues from your repositories
+- **Cost Analytics**: Monitor token usage and spending
+- **Modern UI**: Clean, minimalist interface with dark mode
+
+## Quick Start (Docker)
+
+The easiest way to run the dashboard is with Docker:
+
+```bash
+# Clone the repository
+git clone https://github.com/guifav/agents_taskforce.git
+cd agents_taskforce
+
+# Start all services
+docker-compose up -d
+
+# Access the dashboard
+open http://localhost:8080
+```
+
+That's it! The dashboard will be available at http://localhost:8080
+
+## Requirements
+
+- Docker 24.0+
+- Docker Compose 2.20+
+- OpenClaw CLI (optional, for full functionality)
+
+## Configuration
+
+Create a `.env` file in the project root:
+
+```env
+# GitHub Token (optional, for GitHub integration)
+GITHUB_TOKEN=ghp_your_token_here
+
+# Ports
+API_PORT=8000
+DASHBOARD_PORT=8080
+
+# Database
+DB_USER=agentadmin
+DB_PASSWORD=changeme
+DB_NAME=agentdashboard
+```
+
+## Docker Services
+
+The docker-compose.yml includes:
+
+| Service | Description | Port |
+|---------|-------------|------|
+| `frontend` | React dashboard | 8080 |
+| `backend` | FastAPI API | 8000 |
+| `postgres` | PostgreSQL database | 5433 |
+| `redis` | Redis cache | 6379 |
+
+## Development
+
+### Local Development (Full Functionality)
+
+For development with access to OpenClaw CLI:
+
+```bash
+# 1. Start database services
+docker-compose up -d postgres redis
+
+# 2. Start backend locally
+./start-local.sh
+
+# 3. Start frontend (in another terminal)
+cd frontend && npm install && npm start
+```
+
+### Building from Source
+
+```bash
+# Build all images
+docker-compose build
+
+# Or build individually
+docker build -f docker/Dockerfile.backend -t agent-dashboard-backend .
+docker build -f docker/Dockerfile.frontend -t agent-dashboard-frontend .
+```
 
 ## Architecture
 
 ```
-+-------------------------------------------------------------+
-|                    Agent Orchestrator Dashboard             |
-+-------------------------------------------------------------+
-|  +--------------+  +--------------+  +------------------+  |
-|  |   Frontend   |  |    API       |  |  Agent Workers   |  |
-|  |  (React)     |  |  (FastAPI)   |  |   (Python)       |  |
-|  +------+-------+  +------+-------+  +--------+---------+  |
-|         |                 |                    |            |
-|         +-----------------+--------------------+            |
-|                           |                                 |
-|                    +------+------+                         |
-|                    |  WebSocket  |                         |
-|                    |   Server    |                         |
-|                    +------+------+                         |
-|                           |                                 |
-|         +-----------------+-----------------+              |
-|         |                 |                 |              |
-|    +---------+      +---------+      +----------+         |
-|    |  Redis  |      |PostgreSQL|      |  GitHub  |         |
-|    | (Cache) |      | (State)  |      |   API    |         |
-|    +---------+      +---------+      +----------+         |
-+-------------------------------------------------------------+
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   Frontend      │────▶│     Backend     │────▶│   PostgreSQL    │
+│   (React)       │     │   (FastAPI)     │     │   (Database)    │
+│   Port 8080     │◄────│   Port 8000     │◄────│   Port 5433     │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                               │
+                               ▼
+                        ┌─────────────────┐
+                        │     Redis       │
+                        │   (Cache)       │
+                        │   Port 6379     │
+                        └─────────────────┘
 ```
-
-## Quick Start
-
-### Prerequisites
-
-- Docker 24.0+
-- Docker Compose 2.20+
-- OpenClaw CLI installed
-- Python 3.11+ (for local mode)
-- Node.js 20+ (for local frontend)
-
-### Option 1: Local Mode (Recommended for Real Agent Execution)
-
-Run the backend directly on your Mac to execute agents:
-
-```bash
-# Clone the repository
-git clone https://github.com/guifav/agent-orchestrator-dashboard.git
-cd agent-orchestrator-dashboard
-
-# Configure environment
-cp backend/.env.local backend/.env
-# Edit backend/.env with your GITHUB_TOKEN
-
-# Start database services
-docker-compose up -d postgres redis
-
-# Start backend locally (has access to OpenClaw CLI)
-./start-local.sh
-
-# In another terminal, start frontend
-cd frontend && npm install && npm start
-
-# Access dashboard
-open http://localhost:3000
-```
-
-### Option 2: Docker Mode (Demo Only)
-
-Agents cannot be executed in Docker mode (OpenClaw not available in container):
-
-```bash
-# Start all services
-docker-compose up -d
-
-# Access dashboard
-open http://localhost:8080
-```
-
-## Project Structure
-
-```
-agent-orchestrator-dashboard/
-├── backend/
-│   ├── api/                 # FastAPI application
-│   ├── workers/             # Background job processors
-│   ├── models/              # Database models
-│   └── websocket/           # Real-time updates
-├── frontend/
-│   ├── src/
-│   │   ├── components/      # React components
-│   │   ├── pages/           # Dashboard views
-│   │   └── hooks/           # Custom React hooks
-│   └── public/
-├── agents/                  # OpenClaw agent definitions
-│   ├── github-monitor/
-│   ├── cost-tracker/
-│   └── workflow-orchestrator/
-├── docker/
-│   ├── Dockerfile.backend
-│   ├── Dockerfile.frontend
-│   └── docker-compose.yml
-└── docs/
-    ├── architecture.md
-    ├── api-reference.md
-    └── contributing.md
-```
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `GITHUB_TOKEN` | GitHub Personal Access Token | Required |
-| `OPENCLAW_PATH` | Path to OpenClaw binary | `/usr/local/bin/openclaw` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://...` |
-| `REDIS_URL` | Redis connection string | `redis://...` |
-| `DASHBOARD_PORT` | Web dashboard port | `8080` |
-| `API_PORT` | Backend API port | `8000` |
-
-### Agent Configuration
-
-Configure your agent team in `agents/config.yaml`:
-
-```yaml
-agents:
-  - name: code-reviewer
-    skill: code-reviewer
-    model: moonshot/kimi-k2.5
-    max_cost_per_job: 0.50
-    
-  - name: qa-tester
-    skill: qa-tester
-    model: moonshot/kimi-k2.5
-    max_cost_per_job: 0.30
-    
-  - name: github-guardian
-    skill: github-guardian
-    schedule: "*/10 * * * *"
-    repositories:
-      - guifav/virtuagency.ai
-      - guifav/sync
-```
-
-## Dashboard Views
-
-### 1. Agent Overview
-- **Real-time status** of all discovered agents from `~/.openclaw/skills/`
-- **Execute agents** directly from the UI
-- **View/edit configurations** (config.json)
-- **Schedule agents** via OpenClaw cron integration
-
-### 2. GitHub Integration
-- Open PRs across repositories
-- Issue triage and assignment
-- PR review status
-- Trigger code-reviewer agent on PRs
-
-### 3. Workflow Visualization
-- Visual flow of agent interactions
-- Handoff points between agents
-- Job queue and processing status
-- Real-time updates via WebSocket
-
-### 4. Cost Analytics
-- Token usage per model
-- Cost breakdown by agent/job
-- Budget alerts and limits
-- Historical trends
 
 ## API Endpoints
 
-### Agents
 - `GET /api/agents` - List all agents
-- `GET /api/agents/{id}/status` - Agent status
-- `POST /api/agents/{id}/spawn` - Spawn agent
-- `GET /api/agents/{id}/logs` - Agent logs
+- `GET /api/agents/{id}/status` - Get agent status
+- `POST /api/agents/{id}/run` - Execute agent
+- `GET /api/github/prs` - List GitHub PRs
+- `GET /api/github/issues` - List GitHub issues
+- `GET /api/metrics/dashboard` - Get metrics
+- `WS /ws` - WebSocket for real-time updates
 
-### GitHub
-- `GET /api/github/prs` - Open PRs
-- `GET /api/github/issues` - Open issues
-- `POST /api/github/prs/{id}/assign` - Assign to agent
+## Screenshots
 
-### Monitoring
-- `GET /api/metrics/tokens` - Token usage
-- `GET /api/metrics/costs` - Cost metrics
-- `GET /api/metrics/models` - Model usage
-- `WS /api/stream` - Real-time events
+### Dashboard Overview
+![Dashboard](docs/images/dashboard.png)
 
-## Development
+### Agent Management
+![Agents](docs/images/agents.png)
 
-```bash
-# Start development environment
-docker-compose -f docker-compose.dev.yml up
-
-# Run tests
-make test
-
-# Lint code
-make lint
-
-# Build production images
-make build
-```
+### GitHub Integration
+![GitHub](docs/images/github.png)
 
 ## Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-### Roadmap
+### Development Setup
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make your changes
+4. Submit a pull request
+
+## Roadmap
 
 - [ ] Kubernetes deployment
 - [ ] Multi-tenant support
-- [ ] Custom agent builder UI
-- [ ] Integration with LangSmith
-- [ ] Mobile app companion
+- [ ] Agent execution via UI
+- [ ] Custom workflows
+- [ ] Mobile app
 
 ## License
 
@@ -236,9 +161,10 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-- OpenClaw community for the agent orchestration patterns
-- Contributors to the multi-agent architecture research
+- [OpenClaw](https://openclaw.ai) - The agent platform
+- [shadcn/ui](https://ui.shadcn.com) - UI component inspiration
+- [Tailwind CSS](https://tailwindcss.com) - Styling
 
 ---
 
-**Built for the OpenClaw ecosystem**
+**Built with ♥ for the OpenClaw community**
